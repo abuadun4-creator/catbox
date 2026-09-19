@@ -3,7 +3,9 @@ const cors = require('cors');
 const axios = require('axios');
 const formData = require('form-data');
 const multer = require('multer');
-const upload = multer({ limits: { fileSize: 200 * 1024 * 1024 } }); // Hỗ trợ tối đa 200MB
+
+// Cấu hình lưu trữ bộ nhớ tạm cho file tới 200MB
+const upload = multer({ limits: { fileSize: 200 * 1024 * 1024 } });
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -15,8 +17,7 @@ app.post('/upload', upload.single('fileToUpload'), async (req, res) => {
     const form = new formData();
     form.append('reqtype', 'fileupload');
     if (req.body.userhash) form.append('userhash', req.body.userhash);
-    
-    // Stream trực tiếp buffer
+
     form.append('fileToUpload', req.file.buffer, {
       filename: req.file.originalname,
       contentType: req.file.mimetype,
@@ -24,7 +25,9 @@ app.post('/upload', upload.single('fileToUpload'), async (req, res) => {
 
     const response = await axios.post('https://catbox.moe/user/api.php', form, {
       headers: form.getHeaders(),
-      timeout: 600000, // Nâng timeout lên 10 phút (600.000ms) để không bị 504
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 600000, // Timeout 10 phút
     });
 
     res.status(200).send(response.data);
